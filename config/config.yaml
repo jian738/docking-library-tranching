@@ -1,0 +1,45 @@
+seed: 42
+
+input:
+  raw_file: "data/raw/synthetic_molecules.csv"
+
+output:
+  subset_dir: "data/corpus_subset"
+  subset_filename: "corpus_subset.parquet"
+
+selection:
+  # Column containing the docking score (lower = better binding, docking convention)
+  score_column: "docking_score"
+  ascending: true          # true if lower score is better
+  score_threshold: null    # optional cutoff applied before ranking, e.g. -8.0
+
+  # Per-target cap: keep N rows for each value of group_column, stratified by
+  # that target's own docking-score deciles (score_bins) so the strong-binder
+  # tail is guaranteed representation. Takes precedence over top_n below.
+  top_n_per_target: 333
+  group_column: "target_id"
+  score_bins: 10
+
+  top_n: null               # global cap (ignored when top_n_per_target is set)
+
+  # Rows missing any of these columns are dropped
+  required_columns:
+    - "docking_score"
+
+  # Drop rows flagged as decoys (failed featurisation) if the column is present
+  drop_decoys: true
+
+  # Optional random subsample after filtering (for prototyping); null = keep all
+  random_sample_n: null
+
+# null = keep all columns; otherwise a list of column names to retain
+columns_to_keep: null
+
+tranching:
+  representation: "ecfp4"
+  task: "target_agnostic_tranching"
+  # k-means k is derived as round(n_molecules / target_mean_tranche_size),
+  # not fixed directly, so it tracks corpus size automatically.
+  target_mean_tranche_size: 50
+  top_pct: 0.01
+  results_path: "results/benchmark_results.parquet"
